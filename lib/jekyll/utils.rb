@@ -13,8 +13,8 @@ module Jekyll
     # Constants for use in #slugify
     SLUGIFY_MODES = %w(raw default pretty ascii latin).freeze
     SLUGIFY_RAW_REGEXP = Regexp.new('\\s+').freeze
-    SLUGIFY_DEFAULT_REGEXP = Regexp.new("[^[:alnum:]]+").freeze
-    SLUGIFY_PRETTY_REGEXP = Regexp.new("[^[:alnum:]._~!$&'()+,;=@]+").freeze
+    SLUGIFY_DEFAULT_REGEXP = Regexp.new("[^\\p{M}\\p{L}\\p{Nd}]+").freeze
+    SLUGIFY_PRETTY_REGEXP = Regexp.new("[^\\p{M}\\p{L}\\p{Nd}._~!$&'()+,;=@]+").freeze
     SLUGIFY_ASCII_REGEXP = Regexp.new("[^[A-Za-z0-9]]+").freeze
 
     # Takes a slug and turns it into a simple title.
@@ -136,14 +136,14 @@ module Jekyll
     # Determines whether a given file has
     #
     # Returns true if the YAML front matter is present.
-    # rubocop: disable PredicateName
+    # rubocop: disable Naming/PredicateName
     def has_yaml_header?(file)
       File.open(file, "rb", &:readline).match? %r!\A---\s*\r?\n!
     rescue EOFError
       false
     end
 
-    # Determine whether the given content string contains Liquid Tags or Vaiables
+    # Determine whether the given content string contains Liquid Tags or Variables
     #
     # Returns true is the string contains sequences of `{%` or `{{`
     def has_liquid_construct?(content)
@@ -151,7 +151,7 @@ module Jekyll
 
       content.include?("{%") || content.include?("{{")
     end
-    # rubocop: enable PredicateName
+    # rubocop: enable Naming/PredicateName
 
     # Slugify a filename or title.
     #
@@ -215,7 +215,7 @@ module Jekyll
       slug = replace_character_sequence_with_hyphen(string, :mode => mode)
 
       # Remove leading/trailing hyphen
-      slug.gsub!(%r!^\-|\-$!i, "")
+      slug.gsub!(%r!^-|-$!i, "")
 
       slug.downcase! unless cased
       Jekyll.logger.warn("Warning:", "Empty `slug` generated for '#{string}'.") if slug.empty?
@@ -265,7 +265,7 @@ module Jekyll
       template
     end
 
-    # Work the same way as Dir.glob but seperating the input into two parts
+    # Work the same way as Dir.glob but separating the input into two parts
     # ('dir' + '/' + 'pattern') to make sure the first part('dir') does not act
     # as a pattern.
     #
@@ -287,7 +287,7 @@ module Jekyll
     # patterns - the patterns (or the pattern) which will be applied under the dir
     # flags    - the flags which will be applied to the pattern
     #
-    # Returns matched pathes
+    # Returns matched paths
     def safe_glob(dir, patterns, flags = 0)
       return [] unless Dir.exist?(dir)
 

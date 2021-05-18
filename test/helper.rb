@@ -30,7 +30,7 @@ require "minitest/autorun"
 require "minitest/reporters"
 require "minitest/profile"
 require "rspec/mocks"
-require_relative "../lib/jekyll.rb"
+require_relative "../lib/jekyll"
 
 Jekyll.logger = Logger.new(StringIO.new, :error)
 
@@ -51,12 +51,12 @@ Minitest::Reporters.use! [
 module Minitest::Assertions
   def assert_exist(filename, msg = nil)
     msg = message(msg) { "Expected '#{filename}' to exist" }
-    assert File.exist?(filename), msg
+    assert_path_exists(filename, msg)
   end
 
   def refute_exist(filename, msg = nil)
     msg = message(msg) { "Expected '#{filename}' not to exist" }
-    refute File.exist?(filename), msg
+    refute_path_exists(filename, msg)
   end
 end
 
@@ -79,6 +79,17 @@ module DirectoryHelpers
 
   def test_dir(*subdirs)
     root_dir("test", *subdirs)
+  end
+
+  def temp_dir(*subdirs)
+    if Utils::Platforms.vanilla_windows?
+      drive = Dir.pwd.sub(%r!^([^/]+).*!, '\1')
+      temp_root = File.join(drive, "tmp")
+    else
+      temp_root = "/tmp"
+    end
+
+    File.join(temp_root, *subdirs)
   end
 end
 

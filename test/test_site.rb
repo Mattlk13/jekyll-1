@@ -32,7 +32,7 @@ class TestSite < JekyllUnitTest
 
     should "have an array for plugins if passed as a string" do
       site = Site.new(site_configuration("plugins_dir" => "/tmp/plugins"))
-      array = Utils::Platforms.windows? ? ["C:/tmp/plugins"] : ["/tmp/plugins"]
+      array = [temp_dir("plugins")]
       assert_equal array, site.plugins
     end
 
@@ -40,11 +40,7 @@ class TestSite < JekyllUnitTest
       site = Site.new(site_configuration(
                         "plugins_dir" => ["/tmp/plugins", "/tmp/otherplugins"]
                       ))
-      array = if Utils::Platforms.windows?
-                ["C:/tmp/plugins", "C:/tmp/otherplugins"]
-              else
-                ["/tmp/plugins", "/tmp/otherplugins"]
-              end
+      array = [temp_dir("plugins"), temp_dir("otherplugins")]
       assert_equal array, site.plugins
     end
 
@@ -191,7 +187,7 @@ class TestSite < JekyllUnitTest
 
       # simulate destination file deletion
       File.unlink dest
-      refute File.exist?(dest)
+      refute_path_exists(dest)
 
       sleep 1
       @site.process
@@ -236,21 +232,25 @@ class TestSite < JekyllUnitTest
         environment.html
         exploit.md
         foo.md
+        foo.md
         humans.txt
         index.html
         index.html
         info.md
+        main.css.map
         main.scss
         properties.html
         sitemap.xml
         static_files.html
+        test-styles.css.map
+        test-styles.scss
         trailing-dots...md
       )
       unless Utils::Platforms.really_windows?
         # files in symlinked directories may appear twice
-        sorted_pages.push("main.scss", "symlinked-file").sort!
+        sorted_pages.push("main.css.map", "main.scss", "symlinked-file").sort!
       end
-      assert_equal sorted_pages, @site.pages.map(&:name)
+      assert_equal sorted_pages, @site.pages.map(&:name).sort!
     end
 
     should "read posts" do
@@ -268,12 +268,12 @@ class TestSite < JekyllUnitTest
 
     should "read pages with YAML front matter" do
       abs_path = File.expand_path("about.html", @site.source)
-      assert_equal true, Utils.has_yaml_header?(abs_path)
+      assert Utils.has_yaml_header?(abs_path)
     end
 
     should "enforce a strict 3-dash limit on the start of the YAML front matter" do
       abs_path = File.expand_path("pgp.key", @site.source)
-      assert_equal false, Utils.has_yaml_header?(abs_path)
+      refute Utils.has_yaml_header?(abs_path)
     end
 
     should "expose jekyll version to site payload" do
@@ -699,6 +699,15 @@ class TestSite < JekyllUnitTest
           File.join(@site.source, "custom-cache-dir", "foo.md.metadata"),
           @site.in_cache_dir("../../foo.md.metadata")
         )
+      end
+    end
+  end
+
+  context "site process phases" do
+    should "return nil as documented" do
+      site = fixture_site
+      [:reset, :read, :generate, :render, :cleanup, :write].each do |phase|
+        assert_nil site.send(phase)
       end
     end
   end
